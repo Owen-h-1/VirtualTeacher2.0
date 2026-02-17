@@ -12,23 +12,30 @@ import { buildUrl } from "@/utils/buildUrl";
 
 
 
-/**
- * 3Dキャラクターを管理するクラス
- */
 export class Model {
   public vrm?: VRM | null;
   public mixer?: THREE.AnimationMixer;
   public emoteController?: EmoteController;
   public clipMap: Map<string, THREE.AnimationClip> = new Map();
-  public blendTime: number = 0.5; // 这是混合时间，可以根据需要调整
+  public blendTime: number = 0.5;
   public current_clipMap: Map<string, THREE.AnimationClip> = new Map();
 
   private _lookAtTargetParent: THREE.Object3D;
   private _lipSync?: LipSync;
+  private _audioContext?: AudioContext;
 
   constructor(lookAtTargetParent: THREE.Object3D) {
     this._lookAtTargetParent = lookAtTargetParent;
-    this._lipSync = new LipSync(new AudioContext());
+    this._initAudioContext();
+  }
+  
+  private _initAudioContext() {
+    try {
+      this._audioContext = new AudioContext();
+      this._lipSync = new LipSync(this._audioContext);
+    } catch (error) {
+      console.error('Failed to initialize AudioContext:', error);
+    }
   }
 
   public async loadVRM(url: string): Promise<void> {
@@ -59,11 +66,6 @@ export class Model {
     }
   }
 
-  /**
-   * VRMアニメーションを読み込む
-   *
-   * https://github.com/vrm-c/vrm-specification/blob/master/specification/VRMC_vrm_animation-1.0/README.ja.md
-   */
   public async loadAnimation(vrmAnimation: VRMAnimation): Promise<void> {
     const { vrm, mixer } = this;
     if (vrm == null || mixer == null) {
@@ -75,7 +77,6 @@ export class Model {
     action.play();
   }
 
-  // mixamo animation
   public async loadFBX(animationUrl: string) {
     const { vrm, mixer, clipMap, blendTime,current_clipMap } = this;
 
@@ -96,7 +97,6 @@ export class Model {
     current_clipMap?.set("current", animationClip)
   }
 
-   // 给动作切换时加一个淡入淡出效果，避免角色抖动
    public async crossPlay(curAction: THREE.AnimationAction, newAction: THREE.AnimationAction) {
     curAction.fadeOut(1);
     newAction.reset();
@@ -105,11 +105,9 @@ export class Model {
     newAction.fadeIn(1);
   }
 
-  /**
-   * 音声を再生し、リップシンクを行う
-   */
   public async speak(buffer: ArrayBuffer, screenplay: Screenplay) {
     this.emoteController?.playEmotion(screenplay.expression);
+    
     await new Promise((resolve) => {
       this._lipSync?.playFromArrayBuffer(buffer, () => {
         resolve(true);
@@ -125,7 +123,13 @@ export class Model {
   public update(delta: number): void {
     if (this._lipSync) {
       const { volume } = this._lipSync.update();
+      const vowelWeights = this._lipSync.getVowelWeights();
+      
       this.emoteController?.lipSync("aa", volume);
+      
+      if (this.emoteController && 'setVowelWeights' in this.emoteController) {
+        (this.emoteController as any).setVowelWeights(vowelWeights);
+      }
     }
 
     this.emoteController?.update(delta);

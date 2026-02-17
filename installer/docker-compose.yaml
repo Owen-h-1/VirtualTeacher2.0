@@ -11,6 +11,12 @@ services:
         - 8000:8000
        environment:
          - TZ=${TIMEZONE}
+         - HTTP_PROXY=${HTTP_PROXY:-}
+         - HTTPS_PROXY=${HTTPS_PROXY:-}
+         - NO_PROXY=localhost,127.0.0.1
+       dns:
+         - 8.8.8.8
+         - 114.114.114.114
        env_file:
          - "${ENV_FILE:-.env}"
        networks:

@@ -1,9 +1,13 @@
 import json
 import os
 import uuid
+import time
+import logging
 
 import requests
 from ..utils.uuid_generator import generate
+
+logger = logging.getLogger(__name__)
 
 url = "https://v2.genshinvoice.top/run/predict"
 
@@ -12,7 +16,6 @@ headers = {
     "accept": "*/*",
     "accept-language": "zh-CN,zh;q=0.9",
     "content-type": "application/json",
-    "cookie": "_ga_R1FN4KJKJH=GS1.1.1715348492.9.0.1715348492.0.0.0; _ga=GA1.2.245707418.1703683960; _gid=GA1.2.1196486009.1715348493; _gat_gtag_UA_156449732_1=1",
     "origin": "https://v2.genshinvoice.top",
     "referer": "https://v2.genshinvoice.top/",
     "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
@@ -29,618 +32,114 @@ file_url = "https://v2.genshinvoice.top/file="
 
 bert_vits2_voices = [{
     "id": "派蒙_ZH",
-    "name": "派蒙_ZH"
+    "name": "派蒙(女声-活泼)",
+    "gender": "female"
 }, {
     "id": "纳西妲_ZH",
-    "name": "纳西妲_ZH"
+    "name": "纳西妲(女声-可爱)",
+    "gender": "female"
 }, {
     "id": "凯亚_ZH",
-    "name": "凯亚_ZH"
+    "name": "凯亚(男声-沉稳)",
+    "gender": "male"
 }, {
     "id": "阿贝多_ZH",
-    "name": "阿贝多_ZH"
+    "name": "阿贝多(男声-温和)",
+    "gender": "male"
 }, {
     "id": "温迪_ZH",
-    "name": "温迪_ZH"
+    "name": "温迪(男声-少年)",
+    "gender": "male"
 }, {
     "id": "枫原万叶_ZH",
-    "name": "枫原万叶_ZH"
+    "name": "枫原万叶(男声-温柔)",
+    "gender": "male"
 }, {
     "id": "钟离_ZH",
-    "name": "钟离_ZH"
+    "name": "钟离(男声-沉稳)",
+    "gender": "male"
 }, {
     "id": "荒泷一斗_ZH",
-    "name": "荒泷一斗_ZH"
+    "name": "荒泷一斗(男声-豪爽)",
+    "gender": "male"
 }, {
     "id": "八重神子_ZH",
-    "name": "八重神子_ZH"
+    "name": "八重神子(女声-妩媚)",
+    "gender": "female"
 }, {
     "id": "艾尔海森_ZH",
-    "name": "艾尔海森_ZH"
-}, {
-    "id": "提纳里_ZH",
-    "name": "提纳里_ZH"
-}, {
-    "id": "迪希雅_ZH",
-    "name": "迪希雅_ZH"
-}, {
-    "id": "卡维_ZH",
-    "name": "卡维_ZH"
+    "name": "艾尔海森(男声-冷淡)",
+    "gender": "male"
 }, {
     "id": "宵宫_ZH",
-    "name": "宵宫_ZH"
+    "name": "宵宫(女声-开朗)",
+    "gender": "female"
 }, {
     "id": "那维莱特_ZH",
-    "name": "那维莱特_ZH"
-}, {
-    "id": "莱依拉_ZH",
-    "name": "莱依拉_ZH"
-}, {
-    "id": "赛诺_ZH",
-    "name": "赛诺_ZH"
-}, {
-    "id": "莫娜_ZH",
-    "name": "莫娜_ZH"
-}, {
-    "id": "诺艾尔_ZH",
-    "name": "诺艾尔_ZH"
-}, {
-    "id": "托马_ZH",
-    "name": "托马_ZH"
-}, {
-    "id": "凝光_ZH",
-    "name": "凝光_ZH"
-}, {
-    "id": "林尼_ZH",
-    "name": "林尼_ZH"
-}, {
-    "id": "北斗_ZH",
-    "name": "北斗_ZH"
-}, {
-    "id": "柯莱_ZH",
-    "name": "柯莱_ZH"
-}, {
-    "id": "神里绫华_ZH",
-    "name": "神里绫华_ZH"
-}, {
-    "id": "可莉_ZH",
-    "name": "可莉_ZH"
-}, {
-    "id": "芭芭拉_ZH",
-    "name": "芭芭拉_ZH"
-}, {
-    "id": "雷电将军_ZH",
-    "name": "雷电将军_ZH"
-}, {
-    "id": "娜维娅_ZH",
-    "name": "娜维娅_ZH"
+    "name": "那维莱特(男声-威严)",
+    "gender": "male"
 }, {
     "id": "芙宁娜_ZH",
-    "name": "芙宁娜_ZH"
+    "name": "芙宁娜(女声-活泼)",
+    "gender": "female"
 }, {
-    "id": "珊瑚宫心海_ZH",
-    "name": "珊瑚宫心海_ZH"
+    "id": "雷电将军_ZH",
+    "name": "雷电将军(女声-威严)",
+    "gender": "female"
 }, {
-    "id": "鹿野院平藏_ZH",
-    "name": "鹿野院平藏_ZH"
-}, {
-    "id": "迪奥娜_ZH",
-    "name": "迪奥娜_ZH"
-}, {
-    "id": "琴_ZH",
-    "name": "琴_ZH"
-}, {
-    "id": "五郎_ZH",
-    "name": "五郎_ZH"
-}, {
-    "id": "班尼特_ZH",
-    "name": "班尼特_ZH"
-}, {
-    "id": "达达利亚_ZH",
-    "name": "达达利亚_ZH"
-}, {
-    "id": "安柏_ZH",
-    "name": "安柏_ZH"
-}, {
-    "id": "莱欧斯利_ZH",
-    "name": "莱欧斯利_ZH"
-}, {
-    "id": "夜兰_ZH",
-    "name": "夜兰_ZH"
-}, {
-    "id": "妮露_ZH",
-    "name": "妮露_ZH"
-}, {
-    "id": "辛焱_ZH",
-    "name": "辛焱_ZH"
-}, {
-    "id": "丽莎_ZH",
-    "name": "丽莎_ZH"
-}, {
-    "id": "珐露珊_ZH",
-    "name": "珐露珊_ZH"
-}, {
-    "id": "魈_ZH",
-    "name": "魈_ZH"
-}, {
-    "id": "香菱_ZH",
-    "name": "香菱_ZH"
-}, {
-    "id": "迪卢克_ZH",
-    "name": "迪卢克_ZH"
-}, {
-    "id": "砂糖_ZH",
-    "name": "砂糖_ZH"
-}, {
-    "id": "烟绯_ZH",
-    "name": "烟绯_ZH"
-}, {
-    "id": "早柚_ZH",
-    "name": "早柚_ZH"
-}, {
-    "id": "云堇_ZH",
-    "name": "云堇_ZH"
+    "id": "神里绫华_ZH",
+    "name": "神里绫华(女声-优雅)",
+    "gender": "female"
 }, {
     "id": "刻晴_ZH",
-    "name": "刻晴_ZH"
-}, {
-    "id": "重云_ZH",
-    "name": "重云_ZH"
-}, {
-    "id": "优菈_ZH",
-    "name": "优菈_ZH"
+    "name": "刻晴(女声-干练)",
+    "gender": "female"
 }, {
     "id": "胡桃_ZH",
-    "name": "胡桃_ZH"
-}, {
-    "id": "流浪者_ZH",
-    "name": "流浪者_ZH"
-}, {
-    "id": "久岐忍_ZH",
-    "name": "久岐忍_ZH"
-}, {
-    "id": "神里绫人_ZH",
-    "name": "神里绫人_ZH"
+    "name": "胡桃(女声-俏皮)",
+    "gender": "female"
 }, {
     "id": "甘雨_ZH",
-    "name": "甘雨_ZH"
-}, {
-    "id": "戴因斯雷布_ZH",
-    "name": "戴因斯雷布_ZH"
-}, {
-    "id": "菲谢尔_ZH",
-    "name": "菲谢尔_ZH"
-}, {
-    "id": "白术_ZH",
-    "name": "白术_ZH"
-}, {
-    "id": "行秋_ZH",
-    "name": "行秋_ZH"
-}, {
-    "id": "九条裟罗_ZH",
-    "name": "九条裟罗_ZH"
-}, {
-    "id": "夏洛蒂_ZH",
-    "name": "夏洛蒂_ZH"
-}, {
-    "id": "雷泽_ZH",
-    "name": "雷泽_ZH"
-}, {
-    "id": "申鹤_ZH",
-    "name": "申鹤_ZH"
-}, {
-    "id": "荧_ZH",
-    "name": "荧_ZH"
-}, {
-    "id": "空_ZH",
-    "name": "空_ZH"
-}, {
-    "id": "迪娜泽黛_ZH",
-    "name": "迪娜泽黛_ZH"
-}, {
-    "id": "凯瑟琳_ZH",
-    "name": "凯瑟琳_ZH"
-}, {
-    "id": "多莉_ZH",
-    "name": "多莉_ZH"
-}, {
-    "id": "坎蒂丝_ZH",
-    "name": "坎蒂丝_ZH"
-}, {
-    "id": "琳妮特_ZH",
-    "name": "琳妮特_ZH"
-}, {
-    "id": "萍姥姥_ZH",
-    "name": "萍姥姥_ZH"
-}, {
-    "id": "罗莎莉亚_ZH",
-    "name": "罗莎莉亚_ZH"
-}, {
-    "id": "埃德_ZH",
-    "name": "埃德_ZH"
-}, {
-    "id": "爱贝尔_ZH",
-    "name": "爱贝尔_ZH"
-}, {
-    "id": "伊迪娅_ZH",
-    "name": "伊迪娅_ZH"
-}, {
-    "id": "留云借风真君_ZH",
-    "name": "留云借风真君_ZH"
-}, {
-    "id": "绮良良_ZH",
-    "name": "绮良良_ZH"
-}, {
-    "id": "陌生人_ZH",
-    "name": "陌生人_ZH"
-}, {
-    "id": "七七_ZH",
-    "name": "七七_ZH"
-}, {
-    "id": "式大将_ZH",
-    "name": "式大将_ZH"
-}, {
-    "id": "瑶瑶_ZH",
-    "name": "瑶瑶_ZH"
-}, {
-    "id": "奥兹_ZH",
-    "name": "奥兹_ZH"
-}, {
-    "id": "菲米尼_ZH",
-    "name": "菲米尼_ZH"
-}, {
-    "id": "米卡_ZH",
-    "name": "米卡_ZH"
-}, {
-    "id": "哲平_ZH",
-    "name": "哲平_ZH"
-}, {
-    "id": "浮游水蕈兽·元素生命_ZH",
-    "name": "浮游水蕈兽·元素生命_ZH"
-}, {
-    "id": "大肉丸_ZH",
-    "name": "大肉丸_ZH"
-}, {
-    "id": "托克_ZH",
-    "name": "托克_ZH"
-}, {
-    "id": "蒂玛乌斯_ZH",
-    "name": "蒂玛乌斯_ZH"
-}, {
-    "id": "昆钧_ZH",
-    "name": "昆钧_ZH"
-}, {
-    "id": "欧菲妮_ZH",
-    "name": "欧菲妮_ZH"
-}, {
-    "id": "塞琉斯_ZH",
-    "name": "塞琉斯_ZH"
-}, {
-    "id": "仆人_ZH",
-    "name": "仆人_ZH"
-}, {
-    "id": "迈勒斯_ZH",
-    "name": "迈勒斯_ZH"
-}, {
-    "id": "希格雯_ZH",
-    "name": "希格雯_ZH"
-}, {
-    "id": "阿守_ZH",
-    "name": "阿守_ZH"
-}, {
-    "id": "拉赫曼_ZH",
-    "name": "拉赫曼_ZH"
-}, {
-    "id": "杜拉夫_ZH",
-    "name": "杜拉夫_ZH"
-}, {
-    "id": "伊利亚斯_ZH",
-    "name": "伊利亚斯_ZH"
-}, {
-    "id": "阿晃_ZH",
-    "name": "阿晃_ZH"
-}, {
-    "id": "旁白_ZH",
-    "name": "旁白_ZH"
-}, {
-    "id": "爱德琳_ZH",
-    "name": "爱德琳_ZH"
-}, {
-    "id": "埃洛伊_ZH",
-    "name": "埃洛伊_ZH"
-}, {
-    "id": "德沃沙克_ZH",
-    "name": "德沃沙克_ZH"
-}, {
-    "id": "玛乔丽_ZH",
-    "name": "玛乔丽_ZH"
-}, {
-    "id": "塞塔蕾_ZH",
-    "name": "塞塔蕾_ZH"
-}, {
-    "id": "柊千里_ZH",
-    "name": "柊千里_ZH"
-}, {
-    "id": "海芭夏_ZH",
-    "name": "海芭夏_ZH"
-}, {
-    "id": "九条镰治_ZH",
-    "name": "九条镰治_ZH"
-}, {
-    "id": "阿娜耶_ZH",
-    "name": "阿娜耶_ZH"
-}, {
-    "id": "笼钓瓶一心_ZH",
-    "name": "笼钓瓶一心_ZH"
-}, {
-    "id": "回声海螺_ZH",
-    "name": "回声海螺_ZH"
-}, {
-    "id": "劳维克_ZH",
-    "name": "劳维克_ZH"
-}, {
-    "id": "元太_ZH",
-    "name": "元太_ZH"
-}, {
-    "id": "阿扎尔_ZH",
-    "name": "阿扎尔_ZH"
-}, {
-    "id": "查尔斯_ZH",
-    "name": "查尔斯_ZH"
-}, {
-    "id": "阿洛瓦_ZH",
-    "name": "阿洛瓦_ZH"
-}, {
-    "id": "埃勒曼_ZH",
-    "name": "埃勒曼_ZH"
-}, {
-    "id": "纳比尔_ZH",
-    "name": "纳比尔_ZH"
-}, {
-    "id": "莎拉_ZH",
-    "name": "莎拉_ZH"
-}, {
-    "id": "康纳_ZH",
-    "name": "康纳_ZH"
-}, {
-    "id": "博来_ZH",
-    "name": "博来_ZH"
-}, {
-    "id": "玛塞勒_ZH",
-    "name": "玛塞勒_ZH"
-}, {
-    "id": "阿祇_ZH",
-    "name": "阿祇_ZH"
-}, {
-    "id": "博士_ZH",
-    "name": "博士_ZH"
-}, {
-    "id": "玛格丽特_ZH",
-    "name": "玛格丽特_ZH"
-}, {
-    "id": "迪尔菲_ZH",
-    "name": "迪尔菲_ZH"
-}, {
-    "id": "宛烟_ZH",
-    "name": "宛烟_ZH"
-}, {
-    "id": "羽生田千鹤_ZH",
-    "name": "羽生田千鹤_ZH"
-}, {
-    "id": "海妮耶_ZH",
-    "name": "海妮耶_ZH"
-}, {
-    "id": "旅行者_ZH",
-    "name": "旅行者_ZH"
-}, {
-    "id": "霍夫曼_ZH",
-    "name": "霍夫曼_ZH"
-}, {
-    "id": "佐西摩斯_ZH",
-    "name": "佐西摩斯_ZH"
-}, {
-    "id": "鹿野奈奈_ZH",
-    "name": "鹿野奈奈_ZH"
-}, {
-    "id": "舒伯特_ZH",
-    "name": "舒伯特_ZH"
-}, {
-    "id": "天叔_ZH",
-    "name": "天叔_ZH"
-}, {
-    "id": "艾莉丝_ZH",
-    "name": "艾莉丝_ZH"
-}, {
-    "id": "龙二_ZH",
-    "name": "龙二_ZH"
-}, {
-    "id": "莺儿_ZH",
-    "name": "莺儿_ZH"
-}, {
-    "id": "嘉良_ZH",
-    "name": "嘉良_ZH"
-}, {
-    "id": "一心传名刀_ZH",
-    "name": "一心传名刀_ZH"
-}, {
-    "id": "珊瑚_ZH",
-    "name": "珊瑚_ZH"
-}, {
-    "id": "言笑_ZH",
-    "name": "言笑_ZH"
-}, {
-    "id": "久利须_ZH",
-    "name": "久利须_ZH"
-}, {
-    "id": "嘉玛_ZH",
-    "name": "嘉玛_ZH"
-}, {
-    "id": "艾文_ZH",
-    "name": "艾文_ZH"
-}, {
-    "id": "克洛琳德_ZH",
-    "name": "克洛琳德_ZH"
-}, {
-    "id": "丹吉尔_ZH",
-    "name": "丹吉尔_ZH"
-}, {
-    "id": "女士_ZH",
-    "name": "女士_ZH"
-}, {
-    "id": "白老先生_ZH",
-    "name": "白老先生_ZH"
-}, {
-    "id": "天目十五_ZH",
-    "name": "天目十五_ZH"
-}, {
-    "id": "老孟_ZH",
-    "name": "老孟_ZH"
-}, {
-    "id": "巴达维_ZH",
-    "name": "巴达维_ZH"
-}, {
-    "id": "长生_ZH",
-    "name": "长生_ZH"
-}, {
-    "id": "吴船长_ZH",
-    "name": "吴船长_ZH"
-}, {
-    "id": "拉齐_ZH",
-    "name": "拉齐_ZH"
-}, {
-    "id": "艾伯特_ZH",
-    "name": "艾伯特_ZH"
-}, {
-    "id": "松浦_ZH",
-    "name": "松浦_ZH"
-}, {
-    "id": "埃泽_ZH",
-    "name": "埃泽_ZH"
-}, {
-    "id": "阿圆_ZH",
-    "name": "阿圆_ZH"
-}, {
-    "id": "莫塞伊思_ZH",
-    "name": "莫塞伊思_ZH"
-}, {
-    "id": "阿拉夫_ZH",
-    "name": "阿拉夫_ZH"
-}, {
-    "id": "杜吉耶_ZH",
-    "name": "杜吉耶_ZH"
-}, {
-    "id": "石头_ZH",
-    "name": "石头_ZH"
-}, {
-    "id": "百闻_ZH",
-    "name": "百闻_ZH"
-}, {
-    "id": "波洛_ZH",
-    "name": "波洛_ZH"
-}, {
-    "id": "斯坦利_ZH",
-    "name": "斯坦利_ZH"
-}, {
-    "id": "博易_ZH",
-    "name": "博易_ZH"
-}, {
-    "id": "迈蒙_ZH",
-    "name": "迈蒙_ZH"
-}, {
-    "id": "掇星攫辰天君_ZH",
-    "name": "掇星攫辰天君_ZH"
-}, {
-    "id": "毗伽尔_ZH",
-    "name": "毗伽尔_ZH"
-}, {
-    "id": "芙卡洛斯_ZH",
-    "name": "芙卡洛斯_ZH"
-}, {
-    "id": "恶龙_ZH",
-    "name": "恶龙_ZH"
-}, {
-    "id": "恕筠_ZH",
-    "name": "恕筠_ZH"
-}, {
-    "id": "知易_ZH",
-    "name": "知易_ZH"
-}, {
-    "id": "克列门特_ZH",
-    "name": "克列门特_ZH"
-}, {
-    "id": "大慈树王_ZH",
-    "name": "大慈树王_ZH"
-}, {
-    "id": "西拉杰_ZH",
-    "name": "西拉杰_ZH"
-}, {
-    "id": "上杉_ZH",
-    "name": "上杉_ZH"
-}, {
-    "id": "阿尔卡米_ZH",
-    "name": "阿尔卡米_ZH"
-}, {
-    "id": "纯水精灵_ZH",
-    "name": "纯水精灵_ZH"
-}, {
-    "id": "常九爷_ZH",
-    "name": "常九爷_ZH"
-}, {
-    "id": "沙扎曼_ZH",
-    "name": "沙扎曼_ZH"
-}, {
-    "id": "田铁嘴_ZH",
-    "name": "田铁嘴_ZH"
-}, {
-    "id": "克罗索_ZH",
-    "name": "克罗索_ZH"
-}, {
-    "id": "阿巴图伊_ZH",
-    "name": "阿巴图伊_ZH"
-}, {
-    "id": "阿佩普_ZH",
-    "name": "阿佩普_ZH"
-}, {
-    "id": "埃尔欣根_ZH",
-    "name": "埃尔欣根_ZH"
-}, {
-    "id": "萨赫哈蒂_ZH",
-    "name": "萨赫哈蒂_ZH"
-}, {
-    "id": "塔杰·拉德卡尼_ZH",
-    "name": "塔杰·拉德卡尼_ZH"
-}, {
-    "id": "安西_ZH",
-    "name": "安西_ZH"
-}, {
-    "id": "陆行岩本真蕈·元素生命_ZH",
-    "name": "陆行岩本真蕈·元素生命_ZH"
+    "name": "甘雨(女声-温柔)",
+    "gender": "female"
+}, {
+    "id": "可莉_ZH",
+    "name": "可莉(女声-童真)",
+    "gender": "female"
+}, {
+    "id": "流浪者_ZH",
+    "name": "流浪者(男声-傲慢)",
+    "gender": "male"
 }]
 
 
 class BertVits2API:
+    PERFORMANCE_LOG = True
+    
     def request(self, params: dict[str, str]) -> str:
-        # 合成语音
+        start_time = time.time()
+        
         body = json.dumps(params, ensure_ascii=False).encode('utf-8')
-        response = requests.post(url, headers=headers, data=body, verify=False)
+        response = requests.post(url, headers=headers, data=body, verify=False, timeout=30)
         voice_result = json.loads(response.text)["data"]
         file_path = voice_result[1]["name"]
-        # 下载文件
-        response = requests.get(file_url + file_path, headers=headers, verify=False)
-        # 初始化文件夹
+        
+        response = requests.get(file_url + file_path, headers=headers, verify=False, timeout=30)
+        
         file_name = generate() + ".wav"
-        file_path = os.getcwd() + "/tmp/" + file_name
-        dirPath = os.path.dirname(file_path)
+        full_file_path = os.path.join(os.getcwd(), "tmp", file_name)
+        dirPath = os.path.dirname(full_file_path)
+        
         if not os.path.exists(dirPath):
             os.makedirs(dirPath)
-        if not os.path.exists(file_path):
-            # 用open创建文件 兼容mac
-            open(file_path, 'a').close()
-
-        # 写入语音文件
-        with open(file_path, 'wb') as file:
+        
+        with open(full_file_path, 'wb') as file:
             file.write(response.content)
-
+        
+        elapsed_time = (time.time() - start_time) * 1000
+        if self.PERFORMANCE_LOG:
+            logger.info(f"Bert-VITS2 synthesis completed in {elapsed_time:.2f}ms")
+        
         return file_name
 
 
@@ -665,4 +164,4 @@ class BertVits2:
 
 if __name__ == '__main__':
     client = BertVits2()
-    client.synthesis(text="晚上好，yuki129", speaker="流萤_ZH", noise=0.6, noisew=0.9, sdp_ratio=0.5)
+    client.synthesis(text="晚上好，yuki129", speaker="芙宁娜_ZH", noise=0.6, noisew=0.9, sdp_ratio=0.5)

@@ -14,6 +14,26 @@ sys_code = "adminSettings"
 logger = logging.getLogger(__name__)
 
 
+class DummyMemoryStorage:
+    """备选内存存储驱动，当Milvus不可用时使用"""
+    
+    def __init__(self):
+        self._memory = []
+        logger.info("=> Load DummyMemoryStorage (Milvus unavailable)")
+    
+    def search_short_memory(self, query_text: str, you_name: str, role_name: str):
+        return []
+    
+    def search_lang_memory(self, query_text: str, you_name: str, role_name: str):
+        return ""
+    
+    def save(self, you_name: str, query_text: str, role_name: str, answer_text: str):
+        pass
+    
+    def clear(self, owner: str):
+        pass
+
+
 def lazy_memory_storage(sys_config_json: any, sys_cofnig: any):
     from ..memory.memory_storage import MemoryStorageDriver
     # 加载记忆模块配置
@@ -188,6 +208,8 @@ class SysConfig:
                 sys_config_json=sys_config_json, sys_cofnig=self)
         except Exception as e:
             logger.error("init memory_storage error: %s" % str(e))
+            logger.info("Using DummyMemoryStorage as fallback")
+            self.memory_storage_driver = DummyMemoryStorage()
 
         logger.info("=> Load SysConfig Success")
 

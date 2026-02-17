@@ -1,21 +1,13 @@
 FROM python:3.10.12
 
-# 设置工作目录
 WORKDIR /app
 
-# 复制应用程序文件到工作目录
-COPY ../domain-chatbot .
+COPY domain-chatbot .
 
-# 安装项目依赖框架
-# 使用清华源安装依赖包
-RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple some-package && \
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple && \
     rm -rf ~/.cache/pip && \
     rm -rf /tmp/* && \
-    rm -rf tmp/* && \
-    rm -rf media/* && \
-    rm -rf logs/info.log && \
-    rm -rf db/db.sqlite3 && \
-    rm -rf .env && \
+    mkdir -p tmp media logs db && \
     python manage.py makemigrations && \
     python manage.py migrate
 
@@ -24,8 +16,6 @@ ENV B_STATION_ID=xxxx
 ENV B_UID=12xx
 ENV TIMEZONE=Asia/Shanghai
 
-# 暴露应用程序监听的端口
 EXPOSE 8000
 
-# 启动Python应用程序，并使用 0.0.0.0:8000 监听所有可用地址
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
