@@ -49,6 +49,10 @@ export default function Home() {
     const [subtitle, setSubtitle] = useState("");
     const [displayedSubtitle, setDisplayedSubtitle] = useState("");
     const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(buildUrl("/bg-c.png"));
+    const [isCallActive, setIsCallActive] = useState(false);
+    const [callError, setCallError] = useState<string | null>(null);
+    const callSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
+    const isCallActiveRef = useRef(false);
     const typingDelay = 100; // 每个字的延迟时间，可以根据需要进行调整
     const MAX_SUBTITLES = 30;
     const handleSubtitle = (newSubtitle: string) => {
@@ -133,25 +137,29 @@ export default function Home() {
         emote: string) => {
 
         console.log("RobotMessage:" + content + " emote:" + emote)
-        // 如果content为空，不进行处理
-        // 如果与上一句content完全相同，不进行处理
         if (content == null || content == '' || content == ' ') {
             return
         }
+        
+        if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+            try {
+                callSpeechRecognitionRef.current.stop();
+            } catch (e) {
+                console.error("Failed to stop recognition:", e);
+            }
+        }
+        
         let aiTextLog = "";
         const sentences = new Array<string>();
         const aiText = content;
         const aiTalks = textsToScreenplay([aiText], koeiroParam, emote);
         aiTextLog += aiText;
-        // 文ごとに音声を生成 & 再生、返答を表示
         const currentAssistantMessage = sentences.join(" ");
         setSubtitle(aiTextLog);
         handleSpeakAi(globalConfig, aiTalks[0], () => {
             setAssistantMessage(currentAssistantMessage);
-            // handleSubtitle(aiText + " "); // 添加空格以区分不同的字幕
             startTypewriterEffect(aiTextLog);
 
-            // アシスタントの返答をログに追加
             const params = JSON.parse(
                 window.localStorage.getItem("chatVRMParams") as string
             );
@@ -160,6 +168,18 @@ export default function Home() {
                 {role: "assistant", content: aiTextLog, "user_name": user_name},
             ];
             setChatLog(messageLogAssistant);
+        }, () => {
+            if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+                setTimeout(() => {
+                    if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+                        try {
+                            callSpeechRecognitionRef.current.start();
+                        } catch (e) {
+                            console.error("Failed to restart recognition after speech:", e);
+                        }
+                    }
+                }, 300);
+            }
         });
     }, [])
 
@@ -285,6 +305,78 @@ export default function Home() {
         [systemPrompt, chatLog, setChatLog, handleSpeakAi, setImageUrl, openAiKey, koeiroParam]
     );
 
+    const handleCallRecognitionResult = useCallback(
+        (event: SpeechRecognitionEvent) => {
+            const text = event.results[0][0].transcript;
+            if (event.results[0].isFinal && text.trim()) {
+                console.log("Call message:" + text);
+                handleSendChat(globalConfig, "", "", text);
+            }
+        },
+        [handleSendChat, globalConfig]
+    );
+
+    const handleCallEnd = useCallback(() => {
+        setCallError(null);
+        if (callSpeechRecognitionRef.current) {
+            callSpeechRecognitionRef.current.stop();
+        }
+        isCallActiveRef.current = false;
+        setIsCallActive(false);
+        console.log("Call ended");
+    }, []);
+
+    const handleCallStart = useCallback(
+        (globalConfig: GlobalConfig) => {
+            setCallError(null);
+            
+            const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+            if (!SpeechRecognition) {
+                setCallError("浏览器不支持语音识别功能");
+                return;
+            }
+
+            try {
+                const recognition = new SpeechRecognition();
+                recognition.lang = "zh-cn";
+                recognition.interimResults = true;
+                recognition.continuous = true;
+                
+                recognition.addEventListener("result", handleCallRecognitionResult);
+                recognition.addEventListener("end", () => {
+                    if (isCallActiveRef.current) {
+                        console.log("Recognition ended, restarting...");
+                        setTimeout(() => {
+                            if (isCallActiveRef.current && callSpeechRecognitionRef.current) {
+                                try {
+                                    callSpeechRecognitionRef.current.start();
+                                } catch (e) {
+                                    console.error("Failed to restart recognition:", e);
+                                }
+                            }
+                        }, 500);
+                    }
+                });
+                recognition.addEventListener("error", (event) => {
+                    console.error("Speech recognition error:", event);
+                    if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                        setCallError(`语音识别错误: ${event.error}`);
+                    }
+                });
+
+                recognition.start();
+                callSpeechRecognitionRef.current = recognition;
+                isCallActiveRef.current = true;
+                setIsCallActive(true);
+                console.log("Call started");
+            } catch (error) {
+                console.error("Failed to start call:", error);
+                setCallError("启动通话失败，请检查浏览器权限");
+            }
+        },
+        [handleCallRecognitionResult]
+    );
+
     let lastSwitchTime = 0;
 
     const onChangeGlobalConfig = useCallback((
@@ -358,10 +450,24 @@ export default function Home() {
                     }}>
                         {displayedSubtitle}
                     </div>
+                    {isCallActive && (
+                        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 z-20 bg-green-500 text-white px-4 py-2 rounded-full flex items-center">
+                            <div className="w-3 h-3 bg-white rounded-full animate-pulse mr-2"></div>
+                            通话中...
+                        </div>
+                    )}
+                    {callError && (
+                        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 z-20 bg-red-500 text-white px-4 py-2 rounded-full">
+                            {callError}
+                        </div>
+                    )}
                 </div>
                 <MessageInputContainer
                     isChatProcessing={chatProcessing}
                     onChatProcessStart={handleSendChat}
+                    onCallStart={handleCallStart}
+                    onCallEnd={handleCallEnd}
+                    isCallActive={isCallActive}
                     globalConfig={globalConfig}
                 />
                 <Menu

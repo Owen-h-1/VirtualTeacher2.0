@@ -5,18 +5,18 @@ import { useState, useEffect, useCallback } from "react";
 type Props = {
   isChatProcessing: boolean;
   onChatProcessStart: (globalConfig: GlobalConfig,type: string, user_name: string, content: string) => void;
+  onCallStart: (globalConfig: GlobalConfig) => void;
+  onCallEnd: () => void;
+  isCallActive: boolean;
   globalConfig: GlobalConfig;
 };
 
-/**
- * テキスト入力と音声入力を提供する
- *
- * 音声認識の完了時は自動で送信し、返答文の生成中は入力を無効化する
- *
- */
 export const MessageInputContainer = ({
   isChatProcessing,
   onChatProcessStart,
+  onCallStart,
+  onCallEnd,
+  isCallActive,
   globalConfig,
 }: Props) => {
   const [userMessage, setUserMessage] = useState("");
@@ -24,22 +24,18 @@ export const MessageInputContainer = ({
     useState<SpeechRecognition>();
   const [isMicRecording, setIsMicRecording] = useState(false);
 
-  // 音声認識の結果を処理する
   const handleRecognitionResult = useCallback(
     (event: SpeechRecognitionEvent) => {
       const text = event.results[0][0].transcript;
       setUserMessage(text);
-      // 発言の終了時
       if (event.results[0].isFinal) {
         setUserMessage(text);
-        // 返答文の生成を開始
         onChatProcessStart(globalConfig,"","",text);
       }
     },
     [onChatProcessStart]
   );
 
-  // 無音が続いた場合も終了する
   const handleRecognitionEnd = useCallback(() => {
     setIsMicRecording(false);
   }, []);
@@ -60,18 +56,25 @@ export const MessageInputContainer = ({
     onChatProcessStart(globalConfig,"","",userMessage);
   }, [onChatProcessStart, userMessage]);
 
+  const handleClickCallButton = useCallback(() => {
+    if (isCallActive) {
+      onCallEnd();
+    } else {
+      onCallStart(globalConfig);
+    }
+  }, [isCallActive, onCallStart, onCallEnd, globalConfig]);
+
   useEffect(() => {
     const SpeechRecognition =
       window.webkitSpeechRecognition || window.SpeechRecognition;
 
-    // FirefoxなどSpeechRecognition非対応環境対策
     if (!SpeechRecognition) {
       return;
     }
     const recognition = new SpeechRecognition();
     recognition.lang = "zh-cn";
-    recognition.interimResults = true; // 認識の途中結果を返す
-    recognition.continuous = false; // 発言の終了時に認識を終了する
+    recognition.interimResults = true;
+    recognition.continuous = false;
 
     recognition.addEventListener("result", handleRecognitionResult);
     recognition.addEventListener("end", handleRecognitionEnd);
@@ -90,9 +93,11 @@ export const MessageInputContainer = ({
       userMessage={userMessage}
       isChatProcessing={isChatProcessing}
       isMicRecording={isMicRecording}
+      isCallActive={isCallActive}
       onChangeUserMessage={(e) => setUserMessage(e.target.value)}
       onClickMicButton={handleClickMicButton}
       onClickSendButton={handleClickSendButton}
+      onClickCallButton={handleClickCallButton}
     />
   );
 };
