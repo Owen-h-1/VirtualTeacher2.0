@@ -22,7 +22,8 @@ COPY --from=build /app/next.config.js ./
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 
-RUN npm install --production
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm install --production
 
 EXPOSE 3000
 

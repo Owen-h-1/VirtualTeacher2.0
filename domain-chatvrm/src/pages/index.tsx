@@ -48,11 +48,14 @@ export default function Home() {
     const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialFormData);
     const [subtitle, setSubtitle] = useState("");
     const [displayedSubtitle, setDisplayedSubtitle] = useState("");
-    const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>("");
+    const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(buildUrl("/bg-c.png"));
     const [isCallActive, setIsCallActive] = useState(false);
     const [callError, setCallError] = useState<string | null>(null);
     const callSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
     const isCallActiveRef = useRef(false);
+    const isAISpeakingRef = useRef(false);
+    const lastProcessedTextRef = useRef<string>("");
+    const lastProcessTimeRef = useRef<number>(0);
     const typingDelay = 100; // 每个字的延迟时间，可以根据需要进行调整
     const MAX_SUBTITLES = 30;
     const handleSubtitle = (newSubtitle: string) => {
@@ -141,11 +144,13 @@ export default function Home() {
             return
         }
         
+        isAISpeakingRef.current = true;
+        
         if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
             try {
-                callSpeechRecognitionRef.current.stop();
+                callSpeechRecognitionRef.current.abort();
             } catch (e) {
-                console.error("Failed to stop recognition:", e);
+                console.error("Failed to abort recognition:", e);
             }
         }
         
@@ -169,18 +174,16 @@ export default function Home() {
             ];
             setChatLog(messageLogAssistant);
         }, () => {
-            if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
-                setTimeout(() => {
-                    if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
-                        try {
-                            callSpeechRecognitionRef.current.abort();
-                            callSpeechRecognitionRef.current.start();
-                        } catch (e) {
-                            console.error("Failed to restart recognition after speech:", e);
-                        }
+            setTimeout(() => {
+                isAISpeakingRef.current = false;
+                if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+                    try {
+                        callSpeechRecognitionRef.current.start();
+                    } catch (e) {
+                        console.error("Failed to restart recognition after speech:", e);
                     }
-                }, 800);
-            }
+                }
+            }, 500);
         });
     }, [])
 
@@ -197,11 +200,13 @@ export default function Home() {
             return
         }
 
+        isAISpeakingRef.current = true;
+
         if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
             try {
-                callSpeechRecognitionRef.current.stop();
+                callSpeechRecognitionRef.current.abort();
             } catch (e) {
-                console.error("Failed to stop recognition:", e);
+                console.error("Failed to abort recognition:", e);
             }
         }
 
@@ -239,18 +244,16 @@ export default function Home() {
                     "neutral",
                 );
             }
-            if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
-                setTimeout(() => {
-                    if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
-                        try {
-                            callSpeechRecognitionRef.current.abort();
-                            callSpeechRecognitionRef.current.start();
-                        } catch (e) {
-                            console.error("Failed to restart recognition after danmaku:", e);
-                        }
+            setTimeout(() => {
+                isAISpeakingRef.current = false;
+                if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+                    try {
+                        callSpeechRecognitionRef.current.start();
+                    } catch (e) {
+                        console.error("Failed to restart recognition after danmaku:", e);
                     }
-                }, 500);
-            }
+                }
+            }, 500);
         });
     }
 
@@ -321,19 +324,49 @@ export default function Home() {
 
     const handleCallRecognitionResult = useCallback(
         (event: SpeechRecognitionEvent) => {
-            const text = event.results[0][0].transcript;
-            if (event.results[0].isFinal && text.trim()) {
-                console.log("Call message:" + text);
-                handleSendChat(globalConfig, "", "", text);
+            if (isAISpeakingRef.current) {
+                console.log("AI is speaking, ignoring recognition result");
+                return;
             }
+            
+            const text = event.results[0][0].transcript.trim();
+            if (!text) {
+                return;
+            }
+            
+            if (!event.results[0].isFinal) {
+                return;
+            }
+            
+            const now = Date.now();
+            const timeSinceLastProcess = now - lastProcessTimeRef.current;
+            
+            if (timeSinceLastProcess < 1000) {
+                console.log("Too soon since last process, ignoring:", text);
+                return;
+            }
+            
+            if (text === lastProcessedTextRef.current) {
+                console.log("Duplicate text, ignoring:", text);
+                return;
+            }
+            
+            lastProcessedTextRef.current = text;
+            lastProcessTimeRef.current = now;
+            
+            console.log("Call message:" + text);
+            handleSendChat(globalConfig, "", "", text);
         },
         [handleSendChat, globalConfig]
     );
 
     const handleCallEnd = useCallback(() => {
         setCallError(null);
+        isAISpeakingRef.current = false;
+        lastProcessedTextRef.current = "";
+        lastProcessTimeRef.current = 0;
         if (callSpeechRecognitionRef.current) {
-            callSpeechRecognitionRef.current.stop();
+            callSpeechRecognitionRef.current.abort();
         }
         isCallActiveRef.current = false;
         setIsCallActive(false);
@@ -358,22 +391,21 @@ export default function Home() {
                 
                 recognition.addEventListener("result", handleCallRecognitionResult);
                 recognition.addEventListener("end", () => {
-                    if (isCallActiveRef.current) {
+                    if (isCallActiveRef.current && !isAISpeakingRef.current) {
                         console.log("Recognition ended, restarting...");
                         setTimeout(() => {
-                            if (isCallActiveRef.current && callSpeechRecognitionRef.current) {
+                            if (isCallActiveRef.current && !isAISpeakingRef.current && callSpeechRecognitionRef.current) {
                                 try {
-                                    callSpeechRecognitionRef.current.abort();
                                     callSpeechRecognitionRef.current.start();
                                 } catch (e) {
                                     console.error("Failed to restart recognition:", e);
                                 }
                             }
-                        }, 500);
+                        }, 300);
                     }
                 });
                 recognition.addEventListener("error", (event) => {
-                    console.error("Speech recognition error:", event);
+                    console.error("Speech recognition error:", event.error);
                     if (event.error !== 'no-speech' && event.error !== 'aborted') {
                         setCallError(`语音识别错误: ${event.error}`);
                     }
@@ -382,6 +414,9 @@ export default function Home() {
                 recognition.start();
                 callSpeechRecognitionRef.current = recognition;
                 isCallActiveRef.current = true;
+                isAISpeakingRef.current = false;
+                lastProcessedTextRef.current = "";
+                lastProcessTimeRef.current = 0;
                 setIsCallActive(true);
                 console.log("Call started");
             } catch (error) {
@@ -446,7 +481,7 @@ export default function Home() {
     return (
         <div
             style={{
-                backgroundImage: backgroundImageUrl ? `url(${backgroundImageUrl})` : 'linear-gradient(180deg, #f5f7fa 0%, #e4e8ec 100%)',
+                backgroundImage: `url(${backgroundImageUrl})`,
                 backgroundSize: 'cover',
                 width: '100%',
                 height: '100vh',
@@ -461,8 +496,7 @@ export default function Home() {
                     <div className="absolute bottom-1/4 z-10" style={{
                         fontFamily: "fzfs",
                         fontSize: "24px",
-                        color: "#333",
-                        textShadow: "0 0 10px rgba(255,255,255,0.8)",
+                        color: "#555",
                     }}>
                         {displayedSubtitle}
                     </div>
