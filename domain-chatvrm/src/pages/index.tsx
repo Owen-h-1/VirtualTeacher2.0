@@ -48,7 +48,7 @@ export default function Home() {
     const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(initialFormData);
     const [subtitle, setSubtitle] = useState("");
     const [displayedSubtitle, setDisplayedSubtitle] = useState("");
-    const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(buildUrl("/bg-c.png"));
+    const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>("");
     const [isCallActive, setIsCallActive] = useState(false);
     const [callError, setCallError] = useState<string | null>(null);
     const callSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
@@ -446,7 +446,7 @@ export default function Home() {
     return (
         <div
             style={{
-                backgroundImage: `url(${backgroundImageUrl})`,
+                backgroundImage: backgroundImageUrl ? `url(${backgroundImageUrl})` : 'linear-gradient(180deg, #f5f7fa 0%, #e4e8ec 100%)',
                 backgroundSize: 'cover',
                 width: '100%',
                 height: '100vh',
@@ -461,7 +461,8 @@ export default function Home() {
                     <div className="absolute bottom-1/4 z-10" style={{
                         fontFamily: "fzfs",
                         fontSize: "24px",
-                        color: "#555",
+                        color: "#333",
+                        textShadow: "0 0 10px rgba(255,255,255,0.8)",
                     }}>
                         {displayedSubtitle}
                     </div>
