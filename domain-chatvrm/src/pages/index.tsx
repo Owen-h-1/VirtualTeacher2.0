@@ -173,12 +173,13 @@ export default function Home() {
                 setTimeout(() => {
                     if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
                         try {
+                            callSpeechRecognitionRef.current.abort();
                             callSpeechRecognitionRef.current.start();
                         } catch (e) {
                             console.error("Failed to restart recognition after speech:", e);
                         }
                     }
-                }, 300);
+                }, 800);
             }
         });
     }, [])
@@ -192,22 +193,26 @@ export default function Home() {
         action: string) => {
 
         console.log("DanmakuMessage:" + content + " emote:" + emote)
-        // 如果与上一句content完全相同，不进行处理
         if (content == null || content == '' || content == ' ') {
             return
         }
 
+        if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+            try {
+                callSpeechRecognitionRef.current.stop();
+            } catch (e) {
+                console.error("Failed to stop recognition:", e);
+            }
+        }
 
         let aiTextLog = "";
         const sentences = new Array<string>();
         const aiText = content;
         const aiTalks = textsToScreenplay([aiText], koeiroParam, emote);
         aiTextLog += aiText;
-        // 文ごとに音声を生成 & 再生、返答を表示
         setSubtitle(aiTextLog);
         handleSpeakAi(globalConfig, aiTalks[0], () => {
 
-            // 如果有，则播放相应动作
             if (action != null && action != '') {
                 handleBehaviorAction(
                     "behavior_action",
@@ -216,9 +221,7 @@ export default function Home() {
                 );
             }
 
-            // setAssistantMessage(currentAssistantMessage);
             startTypewriterEffect(aiTextLog);
-            // アシスタントの返答をログに追加
             const params = JSON.parse(
                 window.localStorage.getItem("chatVRMParams") as string
             );
@@ -229,13 +232,24 @@ export default function Home() {
             setChatLog(messageLog);
 
         }, () => {
-            // 语音播放完后需要恢复到原动画
             if (action != null && action != '') {
                 handleBehaviorAction(
                     "behavior_action",
                     "idle_01",
                     "neutral",
                 );
+            }
+            if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+                setTimeout(() => {
+                    if (callSpeechRecognitionRef.current && isCallActiveRef.current) {
+                        try {
+                            callSpeechRecognitionRef.current.abort();
+                            callSpeechRecognitionRef.current.start();
+                        } catch (e) {
+                            console.error("Failed to restart recognition after danmaku:", e);
+                        }
+                    }
+                }, 500);
             }
         });
     }
@@ -349,6 +363,7 @@ export default function Home() {
                         setTimeout(() => {
                             if (isCallActiveRef.current && callSpeechRecognitionRef.current) {
                                 try {
+                                    callSpeechRecognitionRef.current.abort();
                                     callSpeechRecognitionRef.current.start();
                                 } catch (e) {
                                     console.error("Failed to restart recognition:", e);
