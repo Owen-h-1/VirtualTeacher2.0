@@ -17,6 +17,9 @@ import {Meta} from "@/components/meta";
 import {GlobalConfig, getConfig, initialFormData} from "@/features/config/configApi";
 import {buildUrl} from "@/utils/buildUrl";
 import {generateMediaUrl, vrmModelData} from "@/features/media/mediaApi";
+import { FaceRecognitionPanel } from "@/components/FaceRecognitionPanel";
+import { ExpressionData } from "@/features/faceRecognition/faceRecognitionApi";
+import { teachingStrategyService, TeachingAdjustment } from "@/features/faceRecognition/teachingStrategy";
 
 
 // const m_plus_2 = M_PLUS_2({
@@ -35,6 +38,18 @@ let socketInstance: WebSocket | null = null;
 let bind_message_event = false;
 let webGlobalConfig = initialFormData
 
+// Expression name mapping for display
+const expressionNames: Record<string, string> = {
+  happy: '开心',
+  sad: '悲伤',
+  angry: '愤怒',
+  surprised: '惊讶',
+  neutral: '中性',
+  confused: '困惑',
+  bored: '无聊',
+  focused: '专注'
+};
+
 export default function Home() {
 
     const {viewer} = useContext(ViewerContext);
@@ -51,6 +66,11 @@ export default function Home() {
     const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>(buildUrl("/bg-c.png"));
     const [isCallActive, setIsCallActive] = useState(false);
     const [callError, setCallError] = useState<string | null>(null);
+    
+    // Face Recognition Integration States
+    const [currentExpression, setCurrentExpression] = useState<ExpressionData | null>(null);
+    const [teachingAdjustment, setTeachingAdjustment] = useState<TeachingAdjustment | null>(null);
+    const [showFacePanel, setShowFacePanel] = useState(false);
     const callSpeechRecognitionRef = useRef<SpeechRecognition | null>(null);
     const isCallActiveRef = useRef(false);
     const isAISpeakingRef = useRef(false);
@@ -427,6 +447,51 @@ export default function Home() {
         [handleCallRecognitionResult]
     );
 
+    // Face Recognition Integration Handlers
+    const handleExpressionUpdate = useCallback((expressionData: ExpressionData) => {
+        setCurrentExpression(expressionData);
+        
+        // Feed data to teaching strategy service
+        teachingStrategyService.addExpressionData(expressionData);
+        
+        // Get teaching adjustment suggestion
+        const adjustment = teachingStrategyService.getTeachingAdjustment();
+        if (adjustment && adjustment.priority !== 'low') {
+            setTeachingAdjustment(adjustment);
+            
+            // Log the adjustment for teacher awareness
+            console.log(`[FaceRec] Teaching Adjustment: ${adjustment.action} - ${adjustment.reason}`);
+            
+            // If high priority, could auto-adjust behavior
+            if (adjustment.priority === 'high' && adjustment.suggestedResponse) {
+                console.log(`[FaceRec] Suggested: ${adjustment.suggestedResponse}`);
+            }
+            
+            // Auto-clear after 10 seconds
+            setTimeout(() => setTeachingAdjustment(null), 10000);
+        }
+    }, []);
+
+    const handleInterventionTrigger = useCallback((intervention: NonNullable<ExpressionData['intervention']>) => {
+        console.log(`[FaceRec] Intervention Triggered: ${intervention.state}`, intervention.suggestions);
+        
+        // Could trigger automatic behavior changes based on intervention
+        // Map intervention states to supported emote types: neutral, happy, angry, sad, relaxed
+        switch (intervention.state) {
+            case 'confused':
+                viewer.model?.emote('neutral');
+                break;
+            case 'frustrated':
+                viewer.model?.emote('sad');
+                break;
+            case 'disengaged':
+                viewer.model?.emote('neutral');
+                break;
+            default:
+                break;
+        }
+    }, [viewer]);
+
     let lastSwitchTime = 0;
 
     const onChangeGlobalConfig = useCallback((
@@ -511,6 +576,90 @@ export default function Home() {
                             {callError}
                         </div>
                     )}
+                    
+                    {/* Teaching Adjustment Indicator */}
+                    {teachingAdjustment && (
+                        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-20 max-w-md">
+                            <div className={`px-4 py-3 rounded-lg shadow-lg text-white text-sm ${
+                                teachingAdjustment.priority === 'high' ? 'bg-orange-500 animate-pulse' :
+                                teachingAdjustment.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                            }`}>
+                                <div className="font-semibold">💡 {teachingAdjustment.action.toUpperCase()}</div>
+                                <div className="text-xs opacity-90 mt-1">{teachingAdjustment.reason}</div>
+                                {teachingAdjustment.suggestedResponse && (
+                                    <div className="mt-2 p-2 bg-white bg-opacity-20 rounded text-xs italic">
+                                        「{teachingAdjustment.suggestedResponse}」
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Face Recognition Toggle Button - Enhanced & Reliable */}
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('[FaceRec] Button clicked, current state:', showFacePanel);
+                            setShowFacePanel(!showFacePanel);
+                            console.log('[FaceRec] New state:', !showFacePanel);
+                        }}
+                        className="fixed top-4 right-4 z-[9999] px-6 py-4 rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer"
+                        style={{
+                            background: showFacePanel 
+                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                : 'linear-gradient(135deg, #00c6fb 0%, #005bea 100%)',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: showFacePanel 
+                                ? '0 10px 30px rgba(102, 126, 234, 0.5)'
+                                : '0 10px 40px rgba(0, 198, 251, 0.6), 0 0 20px rgba(0, 198, 251, 0.4)',
+                            animation: showFacePanel ? 'none' : 'glow 2s ease-in-out infinite, float 3s ease-in-out infinite'
+                        }}
+                        title={showFacePanel ? "隐藏表情监控" : "启动人脸情绪识别"}
+                    >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ 
+                                fontSize: '28px', 
+                                animation: showFacePanel ? 'none' : 'bounce 1s ease-in-out infinite'
+                            }}>
+                                {showFacePanel ? '🎭' : '📷'}
+                            </span>
+                            <span>{showFacePanel ? '监控中' : '表情识别'}</span>
+                        </span>
+                        
+                        {!showFacePanel && (
+                            <span style={{
+                                position: 'absolute',
+                                top: '-8px',
+                                right: '-8px',
+                                width: '20px',
+                                height: '20px'
+                            }}>
+                                <span style={{
+                                    position: 'absolute',
+                                    width: '100%',
+                                    height: '100%',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#10b981',
+                                    animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite'
+                                }}></span>
+                                <span style={{
+                                    position: 'relative',
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#059669',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}></span>
+                            </span>
+                        )}
+                    </button>
                 </div>
                 <MessageInputContainer
                     isChatProcessing={chatProcessing}
@@ -538,6 +687,38 @@ export default function Home() {
                     handleClickResetChatLog={() => setChatLog([])}
                     handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
                 />
+                
+                {/* Face Recognition Panel (Slide-in) */}
+                {showFacePanel && (
+                    <div className="fixed top-20 right-4 z-40 w-80 animate-slideIn">
+                        <FaceRecognitionPanel
+                            onExpressionUpdate={handleExpressionUpdate}
+                            onInterventionTrigger={handleInterventionTrigger}
+                        />
+                        
+                        {/* Quick Stats */}
+                        {currentExpression && (
+                            <div className="mt-3 bg-white rounded-lg shadow p-3 text-xs">
+                                <div className="font-semibold text-gray-700 mb-2">📊 实时状态</div>
+                                <div className="space-y-1 text-gray-600">
+                                    <div className="flex justify-between">
+                                        <span>表情:</span>
+                                        <span className="font-medium">{expressionNames[currentExpression.expression] || currentExpression.expression}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>参与度:</span>
+                                        <span className="font-medium">{(currentExpression.engagement_score * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>学习状态:</span>
+                                        <span className="font-medium">{currentExpression.learning_state.description}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+                
                 <GitHubLink/>
             </div>
         </div>

@@ -26,9 +26,9 @@ export const initialFormData = {
     },
     "characterConfig": {
         "character": 1,
-        "character_name": "爱莉",
-        "yourName": "yuki129",
-        "vrmModel": "\u308f\u305f\u3042\u3081_03.vrm",
+        "character_name": "林老师",
+        "yourName": "学生",
+        "vrmModel": "后藤仁.vrm",
         "vrmModelType": "system"
     },
     "conversationConfig": {
