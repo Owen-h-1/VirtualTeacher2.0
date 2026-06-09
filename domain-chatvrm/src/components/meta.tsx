@@ -1,10 +1,10 @@
-import { buildUrl } from "@/utils/buildUrl";
+﻿import { buildUrl } from "@/utils/buildUrl";
 import Head from "next/head";
 export const Meta = () => {
-  const title = "ChatVRM";
+  const title = "灵山景区导览 - AI数字人导游";
   const description =
-    "Webブラウザだけで3Dキャラクターとの会話を、マイクやテキスト入力、音声合成を用いて楽しめます。キャラクター（VRM）の変更や性格設定、音声調整もできます。";
-  const imageUrl = "https://pixiv.github.io/ChatVRM/ogp.png";
+    "灵山景区AI数字人导览服务——通过多模态交互（语音、文本、表情），为游客提供实时智能问答、个性化路线讲解和沉浸式游览体验。基于大模型技术的智慧景区解决方案。";
+  const imageUrl = buildUrl("/ogp.png");
   return (
     <Head>
       <title>{title}</title>

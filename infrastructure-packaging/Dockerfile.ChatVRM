@@ -6,6 +6,9 @@ WORKDIR /app
 COPY ../domain-chatvrm .
 
 RUN npm config set registry https://registry.npmmirror.com && \
+    npm config set fetch-timeout 600000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
     rm -rf .next && \
     rm -rf .node_modules && \
     npm install && \
@@ -23,6 +26,7 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 
 RUN npm config set registry https://registry.npmmirror.com && \
+    npm config set fetch-timeout 600000 && \
     npm install --production
 
 EXPOSE 3000

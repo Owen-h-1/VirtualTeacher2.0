@@ -103,8 +103,8 @@ export const Menu = ({
 
   return (
     <>
-      <div className="absolute z-10 m-24">
-        <div className="grid grid-flow-col gap-[8px]">
+      <div className="absolute top-0 right-0 z-30 m-16">
+        <div className="grid grid-flow-col gap-[6px]">
           <IconButton
             iconName="24/Menu"
             label="设置"

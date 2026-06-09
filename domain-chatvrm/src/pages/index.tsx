@@ -18,6 +18,8 @@ import {GlobalConfig, getConfig, initialFormData} from "@/features/config/config
 import {buildUrl} from "@/utils/buildUrl";
 import {generateMediaUrl, vrmModelData} from "@/features/media/mediaApi";
 import { FaceRecognitionPanel } from "@/components/FaceRecognitionPanel";
+import { ScenicHeader } from "@/components/ScenicHeader";
+import { QuickQuestions } from "@/components/QuickQuestions";
 import { ExpressionData } from "@/features/faceRecognition/faceRecognitionApi";
 import { teachingStrategyService, TeachingAdjustment } from "@/features/faceRecognition/teachingStrategy";
 
@@ -138,7 +140,7 @@ export default function Home() {
     );
 
     /**
-     * 文ごとに音声を直列でリクエストしながら再生する
+     * 鏂囥仈銇ㄣ伀闊冲０銈掔洿鍒椼仹銉偗銈ㄣ偣銉堛仐銇亴銈夊啀鐢熴仚銈?
      */
     const handleSpeakAi = useCallback(
         async (
@@ -301,7 +303,7 @@ export default function Home() {
     };
 
     /**
-     * アシスタントとの会話を行う
+     * 銈偡銈广偪銉炽儓銇ㄣ伄浼氳┍銈掕銇?
      */
     const handleSendChat = useCallback(
         async (globalConfig: GlobalConfig, type: string, user_name: string, content: string) => {
@@ -317,7 +319,7 @@ export default function Home() {
             // );
 
             const yourName = user_name == null || user_name == '' ? globalConfig?.characterConfig?.yourName : user_name
-            // ユーザーの発言を追加して表示
+            // 銉︺兗銈躲兗銇櫤瑷€銈掕拷鍔犮仐銇﹁〃绀?
             const messageLog: Message[] = [
                 ...chatLog,
                 {role: "user", content: content, "user_name": yourName},
@@ -427,7 +429,7 @@ export default function Home() {
                 recognition.addEventListener("error", (event) => {
                     console.error("Speech recognition error:", event.error);
                     if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                        setCallError(`语音识别错误: ${event.error}`);
+                        setCallError(`璇煶璇嗗埆閿欒: ${event.error}`);
                     }
                 });
 
@@ -441,7 +443,7 @@ export default function Home() {
                 console.log("Call started");
             } catch (error) {
                 console.error("Failed to start call:", error);
-                setCallError("启动通话失败，请检查浏览器权限");
+                setCallError("鍚姩閫氳瘽澶辫触锛岃妫€鏌ユ祻瑙堝櫒鏉冮檺");
             }
         },
         [handleCallRecognitionResult]
@@ -538,7 +540,7 @@ export default function Home() {
             socketInstance.onclose = (event) => {
                 console.log('WebSocket connection closed:', event);
                 console.log('Reconnecting...');
-                setupWebSocket(); // 重新调用connect()函数进行连接
+                setupWebSocket(); // 閲嶆柊璋冪敤connect()鍑芥暟杩涜杩炴帴
             };
         });
     }
@@ -555,15 +557,17 @@ export default function Home() {
             }}>
             <div>
                 <Meta/>
+                <ScenicHeader />
                 <Introduction openAiKey={openAiKey} onChangeAiKey={setOpenAiKey}/>
                 <VrmViewer globalConfig={globalConfig}/>
-                <div className="flex items-center justify-center">
-                    <div className="absolute bottom-1/4 z-10" style={{
-                        fontFamily: "fzfs",
-                        fontSize: "24px",
-                        color: "#555",
-                    }}>
-                        {displayedSubtitle}
+                <div className="absolute bottom-[260px] z-10 left-0 right-0 text-center" style={{
+                    fontFamily: "fzfs",
+                }}>
+                        {displayedSubtitle || (
+                            <span style={{ opacity: 0.7, fontSize: "15px", color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,0.3)" }}>
+                                欢迎来到灵山景区，请选择下方问题或直接提问
+                            </span>
+                        )}
                     </div>
                     {isCallActive && (
                         <div className="absolute top-10 left-1/2 transform -translate-x-1/2 z-20 bg-green-500 text-white px-4 py-2 rounded-full flex items-center">
@@ -594,73 +598,11 @@ export default function Home() {
                             </div>
                         </div>
                     )}
-                    
-                    {/* Face Recognition Toggle Button - Enhanced & Reliable */}
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('[FaceRec] Button clicked, current state:', showFacePanel);
-                            setShowFacePanel(!showFacePanel);
-                            console.log('[FaceRec] New state:', !showFacePanel);
-                        }}
-                        className="fixed top-4 right-4 z-[9999] px-6 py-4 rounded-2xl shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer"
-                        style={{
-                            background: showFacePanel 
-                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'linear-gradient(135deg, #00c6fb 0%, #005bea 100%)',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            fontSize: '16px',
-                            border: 'none',
-                            outline: 'none',
-                            boxShadow: showFacePanel 
-                                ? '0 10px 30px rgba(102, 126, 234, 0.5)'
-                                : '0 10px 40px rgba(0, 198, 251, 0.6), 0 0 20px rgba(0, 198, 251, 0.4)',
-                            animation: showFacePanel ? 'none' : 'glow 2s ease-in-out infinite, float 3s ease-in-out infinite'
-                        }}
-                        title={showFacePanel ? "隐藏表情监控" : "启动人脸情绪识别"}
-                    >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ 
-                                fontSize: '28px', 
-                                animation: showFacePanel ? 'none' : 'bounce 1s ease-in-out infinite'
-                            }}>
-                                {showFacePanel ? '🎭' : '📷'}
-                            </span>
-                            <span>{showFacePanel ? '监控中' : '表情识别'}</span>
-                        </span>
-                        
-                        {!showFacePanel && (
-                            <span style={{
-                                position: 'absolute',
-                                top: '-8px',
-                                right: '-8px',
-                                width: '20px',
-                                height: '20px'
-                            }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    width: '100%',
-                                    height: '100%',
-                                    borderRadius: '50%',
-                                    backgroundColor: '#10b981',
-                                    animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite'
-                                }}></span>
-                                <span style={{
-                                    position: 'relative',
-                                    width: '20px',
-                                    height: '20px',
-                                    borderRadius: '50%',
-                                    backgroundColor: '#059669',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}></span>
-                            </span>
-                        )}
-                    </button>
-                </div>
+
+                <QuickQuestions
+                    onQuestionClick={(q: string) => handleSendChat(globalConfig, '', '', q)}
+                    disabled={chatProcessing || isCallActive}
+                />
                 <MessageInputContainer
                     isChatProcessing={chatProcessing}
                     onChatProcessStart={handleSendChat}
@@ -719,8 +661,14 @@ export default function Home() {
                     </div>
                 )}
                 
-                <GitHubLink/>
+
             </div>
         </div>
     )
 }
+
+
+
+
+
+

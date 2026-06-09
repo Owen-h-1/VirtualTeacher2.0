@@ -3,7 +3,7 @@ variable "TAG" {
 }
 
 variable "DISTRO" {
-  default = "okapi0129"
+  default = "zeroang"
 }
 
 group "default" {
@@ -15,7 +15,7 @@ target "chatbot" {
     TAG = null
   }
   dockerfile = "infrastructure-packaging/Dockerfile.ChatBot"
-  tags = ["${DISTRO}/virtualwife-chatbot:${TAG}"]
+  tags = ["${DISTRO}/virtualguide-chatbot:${TAG}"]
 }
 
 target "chatvrm" {
@@ -23,7 +23,7 @@ target "chatvrm" {
     TAG = null
   }
   dockerfile = "infrastructure-packaging/Dockerfile.ChatVRM"
-  tags = ["${DISTRO}/virtualwife-chatvrm:${TAG}"]
+  tags = ["${DISTRO}/virtualguide-chatvrm:${TAG}"]
 }
 
 target "gateway" {
@@ -31,7 +31,7 @@ target "gateway" {
     TAG = null
   }
   dockerfile = "infrastructure-packaging/Dockerfile.Gateway"
-  tags = ["${DISTRO}/virtualwife-gateway:${TAG}"]
+  tags = ["${DISTRO}/virtualguide-gateway:${TAG}"]
 }
 
 target "chatbot-release" {

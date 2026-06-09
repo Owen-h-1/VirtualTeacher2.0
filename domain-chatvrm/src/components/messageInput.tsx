@@ -25,8 +25,8 @@ export const MessageInput = ({
   return (
     <div className="absolute bottom-0 z-20 w-screen">
       <div className="bg-base text-black">
-        {<div className="mx-auto max-w-4xl p-16">
-          <div className="grid grid-flow-col gap-[8px] grid-cols-[min-content_min-content_1fr_min-content]">
+        {<div className="mx-auto max-w-4xl p-12">
+          <div className="grid grid-flow-col gap-[6px] grid-cols-[min-content_min-content_1fr_min-content]">
             <IconButton
               iconName="24/CommentFill"
               className={isCallActive ? "bg-red-500 hover:bg-red-600 active:bg-red-700 disabled:bg-red-300" : "bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled"}
@@ -43,7 +43,7 @@ export const MessageInput = ({
             />
             <input
               type="text"
-              placeholder="输入你想说的事情"
+              placeholder="有什么想了解的？"
               onChange={onChangeUserMessage}
               disabled={isChatProcessing || isCallActive}
               className="bg-surface1 hover:bg-surface1-hover focus:bg-surface1 disabled:bg-surface1-disabled disabled:text-primary-disabled rounded-16 w-full px-16 text-text-primary typography-16 font-M_PLUS_2 font-bold disabled"
@@ -71,3 +71,4 @@ export const MessageInput = ({
     </div>
   );
 };
+
